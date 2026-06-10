@@ -1,0 +1,1876 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>PriceRadar Prototyp — ÜK Modul 248</title>
+    <!-- load Google Font Inter as requested -->
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+    
+    <style>
+        /* Base Styling & Brand Colors */
+        :root {
+            --color-dark: #0f172a;
+            --color-accent: #1a6ef5;
+            --color-green: #16a34a;
+            --color-orange: #ea580c;
+            --color-bg: #e8edf5;
+            --font-sans: 'Inter', -apple-system, sans-serif;
+        }
+
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+        }
+
+        body {
+            font-family: var(--font-sans);
+            background-color: var(--color-bg);
+            color: #1e293b;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            min-height: 100vh;
+            padding: 20px;
+            overflow-x: hidden;
+        }
+
+        /* Phone mockup wrapper - exactly 390px wide */
+        .phone-container {
+            width: 390px;
+            height: 780px;
+            background-color: var(--color-dark);
+            border-radius: 48px;
+            padding: 10px;
+            box-shadow: 0 25px 50px -12px rgba(15, 23, 42, 0.4);
+            border: 4px solid #1e293b;
+            position: relative;
+            display: flex;
+            flex-direction: column;
+            justify-content: space-between;
+            overflow: hidden;
+        }
+
+        /* Screen Wrapper */
+        .screen-viewport {
+            background-color: var(--color-bg);
+            border-radius: 38px;
+            width: 100%;
+            height: 100%;
+            overflow-y: auto;
+            position: relative;
+            display: flex;
+            flex-direction: column;
+            justify-content: space-between;
+            border: 1px solid rgba(0,0,0,0.15);
+        }
+
+        /* Custom scrollbar for simulator */
+        .screen-viewport::-webkit-scrollbar {
+            width: 4px;
+        }
+        .screen-viewport::-webkit-scrollbar-thumb {
+            background-color: rgba(0,0,0,0.1);
+            border-radius: 10px;
+        }
+
+        /* Status Bar up top */
+        .status-bar {
+            background-color: var(--color-dark);
+            color: #f1f5f9;
+            font-size: 11px;
+            font-weight: 600;
+            padding: 12px 24px 8px 24px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            z-index: 50;
+            user-select: none;
+        }
+
+        /* Front Camera & speaker notch placeholder */
+        .notch {
+            position: absolute;
+            top: 14px;
+            left: 50%;
+            transform: translateX(-50%);
+            width: 110px;
+            height: 22px;
+            background-color: #000;
+            border-radius: 20px;
+            z-index: 100;
+        }
+
+        /* Interactive screens container */
+        .screen-content {
+            flex-grow: 1;
+            display: none; /* controlled via js */
+            flex-direction: column;
+            overflow-y: auto;
+            padding-bottom: 24px;
+            animation: fadeIn 0.25s ease-out;
+        }
+
+        .screen-content.active {
+            display: flex;
+        }
+
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(8px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        /* Universal phone header */
+        .phone-header {
+            background-color: var(--color-dark);
+            color: #fff;
+            padding: 16px 20px 24px 20px;
+            border-bottom-left-radius: 24px;
+            border-bottom-right-radius: 24px;
+            box-shadow: 0 4px 10px rgba(0,0,0,0.1);
+            position: relative;
+        }
+
+        .phone-header.green-header {
+            background-color: #064e3b;
+        }
+
+        .phone-header.orange-header {
+            background-color: #7c2d12;
+        }
+
+        .phone-header.purple-header {
+            background-color: #1e1b4b;
+            background-image: linear-gradient(135deg, #1e1b4b, #312e81);
+        }
+
+        .phone-header h2 {
+            font-size: 16px;
+            font-weight: 800;
+            display: flex;
+            align-items: center;
+            gap: 6px;
+        }
+
+        .phone-header p {
+            font-size: 11px;
+            color: #cbd5e1;
+            margin-top: 4px;
+            font-weight: 500;
+        }
+
+        .btn-header-back {
+            background-color: rgba(255, 255, 255, 0.15);
+            border: none;
+            color: #fff;
+            padding: 5px 11px;
+            border-radius: 12px;
+            font-size: 11px;
+            font-weight: 600;
+            cursor: pointer;
+            margin-bottom: 8px;
+            display: inline-flex;
+            align-items: center;
+            transition: background 0.15s;
+        }
+
+        .btn-header-back:hover {
+            background-color: rgba(255, 255, 255, 0.25);
+        }
+
+        /* Grid & Spacing Utilities */
+        .container {
+            padding: 16px;
+            display: flex;
+            flex-direction: column;
+            gap: 14px;
+        }
+
+        /* Action elements styles */
+        .search-container {
+            background-color: #fff;
+            border-radius: 16px;
+            padding: 10px 14px;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            box-shadow: 0 4px 12px rgba(15, 23, 42, 0.05);
+            border: 1px solid #f1f5f9;
+            cursor: pointer;
+            transition: all 0.2s ease-in-out;
+        }
+
+        .search-container.active-glow {
+            border-color: #1a6ef5 !important;
+            box-shadow: 0 0 0 4px rgba(26, 110, 245, 0.3) !important;
+            transform: scale(0.98);
+        }
+
+        .filter-badge {
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+            background-color: #eff6ff;
+            color: #1a6ef5;
+            border: 1px solid #bfdbfe;
+            padding: 6px 14px;
+            border-radius: 20px;
+            font-size: 11px;
+            font-weight: 700;
+            width: fit-content;
+            cursor: pointer;
+            transition: all 0.15s;
+            align-self: flex-start;
+            animation: pulse-bounce 2s infinite;
+        }
+        
+        .filter-badge:hover {
+            background-color: #dbeafe;
+            transform: scale(0.97);
+        }
+        
+        @keyframes pulse-bounce {
+            0%, 100% { transform: translateY(0); }
+            50% { transform: translateY(-2px); }
+        }
+
+        .search-container input {
+            border: none;
+            outline: none;
+            font-family: inherit;
+            font-size: 13px;
+            width: 100%;
+            font-weight: 500;
+            color: #334155;
+            background: transparent;
+        }
+
+        /* Category Grid */
+        .section-title {
+            font-size: 11px;
+            text-transform: uppercase;
+            letter-spacing: 0.05em;
+            color: #64748b;
+            font-weight: 700;
+            margin-bottom: 6px;
+        }
+
+        .category-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 10px;
+        }
+
+        .category-card {
+            background-color: #fff;
+            border-radius: 14px;
+            padding: 12px;
+            border: 1px solid #e2e8f0;
+            cursor: pointer;
+            text-align: left;
+            transition: all 0.15s ease-in-out;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.02);
+            display: flex;
+            flex-direction: column;
+            justify-content: space-between;
+            min-height: 85px;
+        }
+
+        .category-card:hover {
+            border-color: var(--color-accent);
+            transform: scale(1.02);
+        }
+
+        .category-card .icon-row {
+            display: flex;
+            justify-content: space-between;
+            align-items: flex-start;
+            margin-bottom: 4px;
+        }
+
+        .category-card .icon {
+            font-size: 22px;
+        }
+
+        .category-card .count-badge {
+            font-size: 9px;
+            background-color: #f1f5f9;
+            color: #64748b;
+            padding: 2px 6px;
+            border-radius: 6px;
+            font-weight: 700;
+        }
+
+        .category-card .label {
+            font-size: 11px;
+            font-weight: 700;
+            color: #0f172a;
+        }
+
+        /* Recent searches list */
+        .recent-card {
+            background-color: #fff;
+            border-radius: 14px;
+            padding: 12px 14px;
+            border: 1px solid #e2e8f0;
+            cursor: pointer;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.02);
+            transition: all 0.15s;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .recent-card:hover {
+            border-color: var(--color-accent);
+        }
+
+        .recent-title {
+            font-size: 12px;
+            font-weight: 700;
+            color: #0f172a;
+        }
+
+        .recent-meta {
+            font-size: 9px;
+            color: #64748b;
+            margin-top: 3px;
+            font-weight: 500;
+        }
+
+        .recent-badge {
+            font-size: 9px;
+            background-color: #eff6ff;
+            color: var(--color-accent);
+            border: 1px solid #bfdbfe;
+            padding: 2px 6px;
+            border-radius: 6px;
+            font-weight: 700;
+        }
+
+        /* Standard Buttons */
+        .btn-primary {
+            background-color: var(--color-dark);
+            color: #fff;
+            border: none;
+            padding: 13px;
+            font-size: 12px;
+            font-weight: 700;
+            border-radius: 14px;
+            cursor: pointer;
+            transition: background-color 0.15s, transform 0.1s;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 6px;
+            box-shadow: 0 4px 10px rgba(15, 23, 42, 0.15);
+        }
+
+        .btn-primary:active {
+            transform: scale(0.99);
+        }
+
+        .btn-green {
+            background-color: var(--color-green);
+        }
+
+        .btn-green:hover {
+            background-color: #15803d;
+        }
+
+        .btn-outline {
+            background-color: transparent;
+            color: #334155;
+            border: 1px solid #cbd5e1;
+        }
+
+        .btn-outline:hover {
+            background-color: #f8fafc;
+        }
+
+        /* Banner styles */
+        .banner-warning {
+            background-color: #fff7ed;
+            border: 1px solid #ffedd5;
+            border-left: 4px solid var(--color-orange);
+            padding: 10px 12px;
+            border-radius: 12px;
+            display: flex;
+            gap: 8px;
+        }
+
+        .banner-warning p {
+            font-size: 10px;
+            color: #7c2d12;
+            font-weight: 500;
+            line-height: 1.4;
+        }
+
+        .banner-warning.banner-large h4 {
+            font-size: 11px;
+            font-weight: 700;
+            color: #c2410c;
+        }
+
+        /* Sort Bar */
+        .sort-bar {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            background-color: rgba(255,255,255,0.7);
+            border: 1px solid #e2e8f0;
+            border-radius: 12px;
+            padding: 4px 6px;
+        }
+
+        .sort-label {
+            font-size: 9px;
+            font-weight: 700;
+            color: #94a3b8;
+            margin-left: 6px;
+            text-transform: uppercase;
+        }
+
+        .sort-options {
+            display: flex;
+            gap: 2px;
+        }
+
+        .btn-sort {
+            font-size: 10px;
+            font-weight: 700;
+            background: none;
+            border: none;
+            padding: 6px 12px;
+            border-radius: 8px;
+            cursor: pointer;
+            color: #64748b;
+        }
+
+        .btn-sort.active {
+            background-color: var(--color-dark);
+            color: #fff;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.05);
+        }
+
+        /* Provider Comparison Cards list */
+        .provider-cards {
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+        }
+
+        .provider-card {
+            background-color: #fff;
+            border-radius: 14px;
+            padding: 12px;
+            border: 1px solid #e2e8f0;
+            cursor: pointer;
+            transition: all 0.15s;
+            position: relative;
+            display: flex;
+            flex-direction: column;
+            gap: 8px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.02);
+            overflow: hidden;
+            text-align: left;
+        }
+
+        .provider-card:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 6px 14px rgba(15,23,42,0.05);
+        }
+
+        .provider-card.card-best {
+            background-color: #f0fdf4 !important;
+            border-left: 4px solid var(--color-green);
+            border-color: rgba(22, 163, 74, 0.5);
+            box-shadow: 0 4px 10px rgba(22, 163, 74, 0.08);
+            position: relative;
+        }
+
+        .provider-card.card-warning {
+            border-left: 4px solid var(--color-orange);
+            border-color: rgba(234, 88, 12, 0.3);
+        }
+
+        .provider-card.card-danger {
+            border-left: 4px solid #ef4444;
+            border-color: rgba(239, 68, 68, 0.2);
+        }
+
+        .provider-card .card-badge {
+            position: absolute;
+            top: 0;
+            right: 0;
+            font-size: 8px;
+            font-weight: 800;
+            color: #fff;
+            padding: 3px 8px;
+            border-bottom-left-radius: 10px;
+            text-transform: uppercase;
+        }
+
+        .provider-card .badge-best {
+            background-color: var(--color-green);
+        }
+
+        .provider-card .badge-warn {
+            background-color: var(--color-orange);
+        }
+
+        .provider-card-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: flex-start;
+        }
+
+        .provider-name {
+            font-size: 11px;
+            font-weight: 800;
+            color: var(--color-dark);
+            display: flex;
+            align-items: center;
+            gap: 4px;
+        }
+
+        .provider-domain {
+            font-size: 9px;
+            color: #94a3b8;
+            font-weight: 500;
+        }
+
+        .provider-timestamp {
+            font-size: 9px;
+            color: #64748b;
+            font-weight: 500;
+            margin-top: 2px;
+        }
+
+        .provider-price {
+            font-size: 13px;
+            font-weight: 800;
+            color: #0f172a;
+            font-family: monospace;
+            text-align: right;
+        }
+
+        .provider-price.price-best {
+            color: var(--color-green);
+        }
+
+        .provider-price.price-danger {
+            color: #ef4444;
+        }
+
+        .provider-vat-label {
+            font-size: 7px;
+            color: #94a3b8;
+            font-weight: 600;
+            text-transform: uppercase;
+        }
+
+        .provider-card-footer {
+            border-top: 1px solid #f1f5f9;
+            padding-top: 6px;
+            display: flex;
+            justify-content: space-between;
+            font-size: 9px;
+            color: #94a3b8;
+            font-weight: 500;
+        }
+
+        .provider-card-footer span.action {
+            color: var(--color-accent);
+            font-weight: 700;
+        }
+
+        /* Info Card blocks */
+        .info-card {
+            background-color: #fff;
+            border-radius: 14px;
+            padding: 12px 14px;
+            border: 1px solid #e2e8f0;
+            display: flex;
+            flex-direction: column;
+            gap: 8px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.02);
+            text-align: left;
+        }
+
+        .info-card-header {
+            display: flex;
+            align-items: center;
+            gap: 6px;
+            margin-bottom: 2px;
+        }
+
+        .info-card-header h3 {
+            font-size: 10px;
+            font-weight: 800;
+            text-transform: uppercase;
+            letter-spacing: 0.05em;
+            color: #475569;
+        }
+
+        .info-row {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            font-size: 11px;
+            border-bottom: 1px solid #f1f5f9;
+            padding-bottom: 6px;
+        }
+
+        .info-row:last-child {
+            border-bottom: none;
+            padding-bottom: 0;
+        }
+
+        .info-row .label {
+            color: #64748b;
+            font-weight: 500;
+        }
+
+        .info-row .value {
+            font-weight: 700;
+            color: #1e293b;
+        }
+
+        .info-row a {
+            color: var(--color-accent);
+            text-decoration: none;
+            font-weight: 600;
+        }
+
+        .info-row a:hover {
+            text-decoration: underline;
+        }
+
+        .freshness-tag {
+            display: inline-flex;
+            align-items: center;
+            gap: 4px;
+            background-color: #f0fdf4;
+            color: #166534;
+            font-size: 9px;
+            font-weight: 700;
+            padding: 2px 8px;
+            border-radius: 10px;
+            border: 1px solid #bbf7d0;
+        }
+
+        .freshness-dot {
+            width: 5px;
+            height: 5px;
+            background-color: var(--color-green);
+            border-radius: 50%;
+            display: inline-block;
+        }
+
+        /* 7-Day Price History chart component */
+        .chart-container {
+            display: flex;
+            flex-direction: column;
+            gap: 12px;
+        }
+
+        .bars-container {
+            display: flex;
+            justify-content: space-between;
+            align-items: flex-end;
+            padding: 10px 4px 4px 4px;
+            border-bottom: 1px solid #f1f5f9;
+            height: 80px;
+        }
+
+        .chart-bar-wrapper {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            flex-grow: 1;
+        }
+
+        .chart-bar-price {
+            font-size: 8px;
+            font-weight: 700;
+            color: #94a3b8;
+            font-family: monospace;
+            margin-bottom: 2px;
+        }
+
+        .chart-bar {
+            width: 14px;
+            height: 44px; /* stable price */
+            background-color: #cbd5e1;
+            border-top-left-radius: 2px;
+            border-top-right-radius: 2px;
+            transition: background-color 0.2s;
+        }
+
+        .chart-bar.active {
+            background-color: var(--color-accent);
+            height: 44px;
+        }
+
+        .chart-day {
+            font-size: 10px;
+            font-weight: 600;
+            color: #64748b;
+            margin-top: 4px;
+        }
+
+        .chart-note-green {
+            background-color: #f0fdf4;
+            color: #15803d;
+            border: 1px solid #bbf7d0;
+            border-radius: 10px;
+            padding: 8px;
+            font-size: 10px;
+            font-weight: 700;
+            display: flex;
+            align-items: center;
+            gap: 4px;
+        }
+
+        /* Action Selecting Cards & Forms (Screen 4) */
+        .action-cards {
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+        }
+
+        .action-card {
+            background-color: #fff;
+            border-radius: 14px;
+            padding: 12px;
+            border: 2px solid #e2e8f0;
+            cursor: pointer;
+            display: flex;
+            gap: 10px;
+            align-items: center;
+            transition: all 0.1s;
+            text-align: left;
+        }
+
+        .action-card:hover {
+            border-color: #cbd5e1;
+        }
+
+        .action-card.selected {
+            border-color: var(--color-accent);
+            background-color: #eff6ff;
+        }
+
+        .action-icon {
+            font-size: 18px;
+            background-color: #f1f5f9;
+            padding: 6px;
+            border-radius: 10px;
+            width: 32px;
+            height: 32px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .action-text h4 {
+            font-size: 11px;
+            font-weight: 800;
+            color: #0f172a;
+        }
+
+        .action-text p {
+            font-size: 9px;
+            color: #64748b;
+            margin-top: 1px;
+            font-weight: 500;
+        }
+
+        /* Conditional form */
+        .interactive-form {
+            background-color: #fff;
+            border-radius: 14px;
+            border: 1px solid #e2e8f0;
+            padding: 14px;
+            display: flex;
+            flex-direction: column;
+            gap: 12px;
+            box-shadow: 0 4px 10px rgba(0,0,0,0.02);
+            text-align: left;
+        }
+
+        .form-group {
+            display: flex;
+            flex-direction: column;
+            gap: 4px;
+        }
+
+        .form-group label {
+            font-size: 9px;
+            font-weight: 700;
+            text-transform: uppercase;
+            color: #94a3b8;
+            letter-spacing: 0.05em;
+        }
+
+        .input-wrapper {
+            background-color: #f8fafc;
+            border: 1px solid #cbd5e1;
+            border-radius: 10px;
+            padding: 8px 12px;
+            display: flex;
+            align-items: center;
+            gap: 6px;
+        }
+
+        .input-wrapper input {
+            border: none;
+            outline: none;
+            background: none;
+            font-family: inherit;
+            font-size: 12px;
+            font-weight: 700;
+            color: #0f172a;
+            width: 100%;
+        }
+
+        /* Confirmation Cards (Screen 5) */
+        .emoji-center {
+            font-size: 44px;
+            margin-bottom: 2px;
+            line-height: 1;
+        }
+
+        .confirm-card {
+            background-color: #f0fdf4;
+            border: 1px solid #bbf7d0;
+            border-radius: 14px;
+            padding: 14px;
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+            text-align: left;
+        }
+
+        .confirm-card-title {
+            color: #166534;
+            font-size: 10px;
+            font-weight: 800;
+            text-transform: uppercase;
+            letter-spacing: 0.05em;
+            display: flex;
+            align-items: center;
+            gap: 4px;
+        }
+
+        .confirm-row {
+            border-top: 1px solid rgba(22, 163, 74, 0.15);
+            padding-top: 8px;
+            display: flex;
+            flex-direction: column;
+            gap: 2px;
+        }
+
+        .confirm-row label {
+            font-size: 8px;
+            color: #16a34a;
+            font-weight: 700;
+            text-transform: uppercase;
+        }
+
+        .confirm-row p {
+            font-size: 11px;
+            font-weight: 800;
+            color: #0f172a;
+        }
+
+        .confirm-row p.price {
+            font-size: 14px;
+            font-family: monospace;
+        }
+
+        .badge-active-green {
+            background-color: #15803d;
+            color: #fff;
+            font-size: 8px;
+            font-weight: 800;
+            padding: 2px 6px;
+            border-radius: 4px;
+            display: inline-block;
+            text-transform: uppercase;
+        }
+
+        /* Tab bar bottom */
+        .tab-bar {
+            background-color: var(--color-dark);
+            border-top: 1px solid #1e293b;
+            padding: 8px 12px;
+            display: flex;
+            justify-content: space-around;
+            align-items: center;
+            z-index: 50;
+        }
+
+        .tab-item {
+            background: none;
+            border: none;
+            color: #94a3b8;
+            font-family: inherit;
+            font-size: 9px;
+            font-weight: 600;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 3px;
+            cursor: pointer;
+            transition: color 0.15s, transform 0.1s;
+        }
+
+        .tab-item:active {
+            transform: scale(0.95);
+        }
+
+        .tab-item.active {
+            color: var(--color-accent);
+        }
+
+        .tab-icon {
+            font-size: 16px;
+        }
+
+        /* iOS home bar indicator decoration */
+        .home-indicator-bar {
+            background-color: var(--color-dark);
+            padding: 2px 0 6px 0;
+            display: flex;
+            justify-content: center;
+            width: 100%;
+        }
+
+        .home-indicator {
+            width: 100px;
+            height: 4px;
+            background-color: #475569;
+            border-radius: 10px;
+        }
+
+        /* DOTS PROGRESS INDICATOR debajo del teléfono */
+        .progress-dots {
+            display: flex;
+            gap: 8px;
+            margin-top: 14px;
+            align-items: center;
+            justify-content: center;
+            background-color: #fff;
+            padding: 8px 16px;
+            border-radius: 20px;
+            box-shadow: 0 4px 6px rgba(15, 23, 42, 0.05);
+            border: 1px solid #e2e8f0;
+        }
+
+        .progress-dots-title {
+            font-size: 10px;
+            font-weight: 700;
+            color: #94a3b8;
+            text-transform: uppercase;
+            letter-spacing: 0.05em;
+            margin-right: 4px;
+        }
+
+        .dot {
+            width: 18px;
+            height: 18px;
+            border-radius: 50%;
+            background-color: #cbd5e1;
+            border: none;
+            cursor: pointer;
+            font-size: 9px;
+            font-weight: 800;
+            color: #475569;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            transition: all 0.2s;
+        }
+
+        .dot.active {
+            background-color: var(--color-accent);
+            color: #fff;
+            transform: scale(1.15);
+            box-shadow: 0 0 8px rgba(26, 110, 245, 0.4);
+        }
+
+        /* CSS for toast notifications inside prototype */
+        .toast {
+            position: absolute;
+            top: 55px;
+            left: 50%;
+            transform: translateX(-50%) translateY(-20px);
+            background-color: #0f172a;
+            color: #fff;
+            font-size: 10px;
+            font-weight: 600;
+            padding: 8px 16px;
+            border-radius: 20px;
+            box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.3);
+            border: 1px solid #334155;
+            z-index: 200;
+            display: none;
+            align-items: center;
+            gap: 6px;
+            opacity: 0;
+            transition: all 0.2s ease-out;
+            width: max-content;
+            max-width: 320px;
+            pointer-events: none;
+        }
+
+        .toast.show {
+            display: flex;
+            opacity: 1;
+            transform: translateX(-50%) translateY(0);
+        }
+
+        .toast-dot {
+            width: 6px;
+            height: 6px;
+            background-color: #10b981;
+            border-radius: 50%;
+        }
+
+        /* Title card for browser frame header - helpful for students looking closely */
+        .browser-card-info {
+            text-align: center;
+            margin-bottom: 12px;
+            max-width: 420px;
+        }
+
+        .browser-card-info h1 {
+            font-size: 20px;
+            font-weight: 800;
+            color: #0f172a;
+            letter-spacing: -0.02em;
+        }
+
+        .browser-card-info p {
+            font-size: 12px;
+            color: #64748b;
+            margin-top: 2px;
+        }
+    </style>
+<script src="/_aistudio-iframe.js"></script></head>
+<body>
+
+    <!-- Browser friendly context card -->
+    <div class="browser-card-info">
+        <h1>PriceRadar Prototyp</h1>
+        <p>Ein klickbarer High-Fidelity-Prototyp (Möbelpreisvergleich) für den ÜK Modul 248</p>
+    </div>
+
+    <!-- MAIN PHONE CONTAINER MOCKUP (390px) -->
+    <div class="phone-container">
+        
+        <!-- Hardware camera notch -->
+        <div class="notch"></div>
+
+        <!-- INNER SIMULATOR SCREEN -->
+        <div class="screen-viewport">
+
+            <!-- Simulator Notification Toast -->
+            <div id="sim-toast" class="toast">
+                <span class="toast-dot"></span>
+                <span id="sim-toast-msg">Erfolgreich ausgeführt</span>
+            </div>
+
+            <!-- HARDWARE STATUS BAR (Decorator) -->
+            <div class="status-bar">
+                <span>9:01</span>
+                <div style="display: flex; align-items: center; gap: 4px;">
+                    <span>📶</span>
+                    <span>5G</span>
+                    <span>🔋</span>
+                </div>
+            </div>
+
+            <!-- ======================================================== -->
+            <!-- SCREEN 1: HOME / SEARCH                                  -->
+            <!-- ======================================================== -->
+            <div id="screen-1" class="screen-content active">
+                <!-- Navy Header -->
+                <div class="phone-header">
+                    <h2>🏠 Home / Suche</h2>
+                    <p>Produkt suchen oder Kategorie wählen</p>
+                </div>
+
+                <div class="container">
+                    <!-- Search Field (Klick -> Screen 2) -->
+                    <div id="main-search-box" class="search-container" onclick="triggerSearchGlow(this)">
+                        <span style="font-size: 13px;">🔍</span>
+                        <input type="text" placeholder="z.B. «Sofa Lena 3-Sitzer»" readonly>
+                    </div>
+
+                    <!-- Category Grid -->
+                    <div>
+                        <h3 class="section-title">Möbelkategorien</h3>
+                        <div class="category-grid">
+                            
+                            <!-- Sofas card -> Screen 2 -->
+                            <div class="category-card" onclick="goToScreen(2); showToast('Kategorie Sofas geladen')">
+                                <div class="icon-row">
+                                    <span class="icon">🛋️</span>
+                                    <span class="count-badge">12 Prods</span>
+                                </div>
+                                <span class="label">Sofas</span>
+                            </div>
+
+                            <!-- Betten card -> Screen 2 -->
+                            <div class="category-card" onclick="goToScreen(2); showToast('Kategorie Betten geladen')">
+                                <div class="icon-row">
+                                    <span class="icon">🛏️</span>
+                                    <span class="count-badge">8 Prods</span>
+                                </div>
+                                <span class="label">Betten</span>
+                            </div>
+
+                            <!-- Stuehle card -> Screen 2 -->
+                            <div class="category-card" onclick="goToScreen(2); showToast('Kategorie Stühle geladen')">
+                                <div class="icon-row">
+                                    <span class="icon">🪑</span>
+                                    <span class="count-badge">15 Prods</span>
+                                </div>
+                                <span class="label">Stühle</span>
+                            </div>
+
+                            <!-- Tische card -> Screen 2 -->
+                            <div class="category-card" onclick="goToScreen(2); showToast('Kategorie Tische geladen')">
+                                <div class="icon-row">
+                                    <span class="icon">🪵</span>
+                                    <span class="count-badge">9 Prods</span>
+                                </div>
+                                <span class="label">Tische</span>
+                            </div>
+
+                        </div>
+                    </div>
+
+                    <!-- Zuletzt gesucht row -->
+                    <div>
+                        <h3 class="section-title">Zuletzt gesucht</h3>
+                        <div class="recent-card" onclick="goToScreen(2); showToast('Zuletzt gesucht: Sofa Lena')">
+                            <div>
+                                <p class="recent-title">Sofa Lena 3-Sitzer</p>
+                                <p class="recent-meta">Zuletzt: heute 08:32 · IKEA Bestpreis</p>
+                            </div>
+                            <div style="display: flex; align-items: center; gap: 6px;">
+                                <span class="recent-badge">4 Anbieter</span>
+                                <span style="font-size: 12px; color: #94a3b8;">➔</span>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Großer dunkler Button -->
+                    <button class="btn-primary" onclick="triggerSearchGlow(document.getElementById('main-search-box'))">
+                        <span>Suchen</span>
+                        <span>➔</span>
+                    </button>
+                </div>
+            </div>
+
+            <!-- ======================================================== -->
+            <!-- SCREEN 2: PREISVERGLEICH                                  -->
+            <!-- ======================================================== -->
+            <div id="screen-2" class="screen-content">
+                <!-- Navy Header with Back Button -->
+                <div class="phone-header">
+                    <button class="btn-header-back" onclick="goToScreen(1)">← Zurück</button>
+                    <div style="display: flex; justify-content: space-between; align-items: center;">
+                        <h2>📊 Preisvergleich</h2>
+                        <span class="recent-badge" style="background:#eff6ff; color:#1a6ef5; font-size:9px;">4 Treffer</span>
+                    </div>
+                    <p style="font-weight: 700; color: #bfdbfe; font-size:12px; margin-top:2px;">«Sofa Lena 3-Sitzer»</p>
+                </div>
+
+                <div class="container" style="gap: 10px;">
+                    <!-- Active Filter Badge -->
+                    <div class="filter-badge" onclick="showToast('🧹 Filter entfernt – Alle Kategorien werden durchsucht.')">
+                        <span>🛋️ Sofas</span>
+                        <span style="font-weight: 800; font-size: 10px; opacity: 0.7; margin-left: 4px;">✕</span>
+                    </div>
+
+                    <!-- Oranges Warn-Banner -->
+                    <div class="banner-warning">
+                        <span style="font-size: 14px;">⚠️</span>
+                        <div>
+                            <p style="font-weight: 700;">Conforma-Preis: vor 3 Tagen – bitte prüfen!</p>
+                            <p style="font-size:8.5px; opacity: 0.95;">Crawler meldete Instabilität beim Conforma-Parser.</p>
+                        </div>
+                    </div>
+
+                    <!-- Sortier-Leiste -->
+                    <div class="sort-bar">
+                        <span class="sort-label">Sortieren nach</span>
+                        <div class="sort-options">
+                            <button id="btn-sort-cheap" class="btn-sort active" onclick="sortProviders('cheap')">Günstigster</button>
+                            <button id="btn-sort-new" class="btn-sort" onclick="sortProviders('new')">Aktuellste</button>
+                        </div>
+                    </div>
+
+                    <!-- Providers list container -->
+                    <div id="providers-list" class="provider-cards">
+                        
+                        <!-- Card 1: IKEA -->
+                        <div class="provider-card card-best" onclick="selectProvider('ikea')">
+                            <div class="card-badge badge-best">🏆 Bestes Angebot</div>
+                            <div class="provider-card-header">
+                                <div>
+                                    <h4 class="provider-name">IKEA <span class="provider-domain">ikea.ch</span></h4>
+                                    <p class="provider-timestamp">Heute 09:01</p>
+                                </div>
+                                <div>
+                                    <p class="provider-price price-best">CHF 749.–</p>
+                                    <p class="provider-vat-label">Inkl. MwSt.</p>
+                                </div>
+                            </div>
+                            <div class="provider-card-footer">
+                                <span>Heute 09:01 · ikea.ch</span>
+                                <span class="action">Auswählen ➔</span>
+                            </div>
+                        </div>
+
+                        <!-- Card 2: Conforma -->
+                        <div class="provider-card card-warning" onclick="selectProvider('conforma')">
+                            <div class="provider-card-header">
+                                <div>
+                                    <h4 class="provider-name">Conforma <span class="provider-domain">conforma.ch</span></h4>
+                                    <p class="provider-timestamp" style="color:var(--color-orange)">⚠️ Vor 3 Tagen</p>
+                                </div>
+                                <div>
+                                    <p class="provider-price" style="color: var(--color-orange)">CHF 819.–</p>
+                                    <p class="provider-vat-label">Inkl. MwSt.</p>
+                                </div>
+                            </div>
+                            <div class="provider-card-footer">
+                                <span>⚠️ Vor 3 Tagen · conforma.ch</span>
+                                <span class="action">Auswählen ➔</span>
+                            </div>
+                        </div>
+
+                        <!-- Card 3: Möbel Pfister Online -->
+                        <div class="provider-card" onclick="selectProvider('moebelshop')">
+                            <div class="provider-card-header">
+                                <div>
+                                    <h4 class="provider-name">Möbel Pfister Online <span class="provider-domain">moebelshop.ch</span></h4>
+                                    <p class="provider-timestamp">Heute 08:55</p>
+                                </div>
+                                <div>
+                                    <p class="provider-price">CHF 869.–</p>
+                                    <p class="provider-vat-label">Inkl. MwSt.</p>
+                                </div>
+                            </div>
+                            <div class="provider-card-footer">
+                                <span>Heute 08:55 · moebelshop.ch</span>
+                                <span class="action">Auswählen ➔</span>
+                            </div>
+                        </div>
+
+                        <!-- Card 4: Pfister -->
+                        <div class="provider-card card-danger" onclick="selectProvider('pfister')">
+                            <div class="provider-card-header">
+                                <div>
+                                    <h4 class="provider-name">Pfister <span class="provider-domain">pfister.ch</span></h4>
+                                    <p class="provider-timestamp">Heute 09:01</p>
+                                </div>
+                                <div>
+                                    <p class="provider-price price-danger">CHF 899.–</p>
+                                    <p class="provider-vat-label">Inkl. MwSt.</p>
+                                </div>
+                            </div>
+                            <div class="provider-card-footer">
+                                <span>Heute 09:01 · pfister.ch</span>
+                                <span class="action">Auswählen ➔</span>
+                            </div>
+                        </div>
+
+                    </div>
+                </div>
+            </div>
+
+            <!-- ======================================================== -->
+            <!-- SCREEN 3: ANBIETER-DETAIL                                 -->
+            <!-- ======================================================== -->
+            <div id="screen-3" class="screen-content">
+                <!-- Green Header -->
+                <div id="detail-header" class="phone-header green-header">
+                    <button class="btn-header-back" onclick="goToScreen(2)">← Sofa Lena 3-Sitzer</button>
+                    <p id="detail-shop-sub">IKEA SCHWEIZ</p>
+                    <h2 id="detail-shop-title" style="font-size: 20px; font-weight:800; font-family:monospace; margin-top: 2px;">CHF 749.–</h2>
+                    <p id="detail-prod-name" style="font-weight: 700;">Sofa LENA, 3-Sitzer, beige</p>
+                </div>
+
+                <div class="container">
+                    
+                    <!-- Info-Karte: Quelle & Aktualität -->
+                    <div class="info-card">
+                        <div class="info-card-header">
+                            <span>📋</span>
+                            <h3>Quelle & Aktualität</h3>
+                        </div>
+                        
+                        <div class="info-row">
+                            <span class="label">Quelle Link:</span>
+                            <span class="value"><a href="#" onclick="alert('Demo: Leitet zu ikea.com/ch weiter'); return false;" id="detail-link">ikea.com/ch/de/...</a></span>
+                        </div>
+
+                        <div class="info-row">
+                            <span class="label">Letzter Scan:</span>
+                            <span class="value" id="detail-scan-time">Heute 09:01 Uhr</span>
+                        </div>
+
+                        <div class="info-row">
+                            <span class="label">Status:</span>
+                            <span class="value">
+                                <span class="freshness-tag">
+                                    <span class="freshness-dot"></span>
+                                    <span>Daten aktuell</span>
+                                </span>
+                            </span>
+                        </div>
+                    </div>
+
+                    <!-- Info-Karte: Preisverlauf -->
+                    <div class="info-card">
+                        <div class="info-card-header">
+                            <span>📈</span>
+                            <h3>Preisverlauf (7 Tage)</h3>
+                        </div>
+
+                        <div class="chart-container">
+                            <div class="bars-container">
+                                <div class="chart-bar-wrapper">
+                                    <span class="chart-bar-price">769</span>
+                                    <div class="chart-bar" style="height: 60px;"></div>
+                                    <span class="chart-day">Mo</span>
+                                </div>
+                                <div class="chart-bar-wrapper">
+                                    <span class="chart-bar-price">769</span>
+                                    <div class="chart-bar" style="height: 60px;"></div>
+                                    <span class="chart-day">Di</span>
+                                </div>
+                                <div class="chart-bar-wrapper">
+                                    <span class="chart-bar-price">749</span>
+                                    <div class="chart-bar" style="height: 44px;"></div>
+                                    <span class="chart-day">Mi</span>
+                                </div>
+                                <div class="chart-bar-wrapper">
+                                    <span class="chart-bar-price">749</span>
+                                    <div class="chart-bar" style="height: 44px;"></div>
+                                    <span class="chart-day">Do</span>
+                                </div>
+                                <div class="chart-bar-wrapper">
+                                    <span class="chart-bar-price">749</span>
+                                    <div class="chart-bar" style="height: 44px;"></div>
+                                    <span class="chart-day">Fr</span>
+                                </div>
+                                <div class="chart-bar-wrapper">
+                                    <span class="chart-bar-price">749</span>
+                                    <div class="chart-bar" style="height: 44px;"></div>
+                                    <span class="chart-day">Sa</span>
+                                </div>
+                                <div class="chart-bar-wrapper">
+                                    <span class="chart-bar-price" style="color:var(--color-accent)">749</span>
+                                    <div class="chart-bar active" style="height: 44px;"></div>
+                                    <span class="chart-day" style="font-weight:850; color:var(--color-accent)">So</span>
+                                </div>
+                            </div>
+
+                            <div class="chart-note-green">
+                                <span>✅</span>
+                                <span id="detail-stability-msg">Stabil bei CHF 749.– seit 7 Tagen</span>
+                            </div>
+                        </div>
+                    </div>
+
+                    <button class="btn-primary btn-green" onclick="goToScreen(4); showToast('Aktionsmenü geöffnet')">
+                        <span>➔ Zum Angebot</span>
+                    </button>
+
+                </div>
+            </div>
+
+            <!-- ======================================================== -->
+            <!-- SCREEN 4: AKTION WÄHLEN                                  -->
+            <!-- ======================================================== -->
+            <div id="screen-4" class="screen-content">
+                <!-- Red Header -->
+                <div class="phone-header orange-header">
+                    <button class="btn-header-back" onclick="goToScreen(3)">← Zurück</button>
+                    <h2>⚡ Aktion wählen</h2>
+                    <p>Was möchtest du tun?</p>
+                </div>
+
+                <div class="container">
+                    
+                    <!-- Action Cards -->
+                    <div class="action-cards">
+                        
+                        <!-- Action 1: Direkt kaufen -->
+                        <div id="action-1" class="action-card" onclick="selectAction(1)">
+                            <div class="action-icon">🛒</div>
+                            <div class="action-text">
+                                <h4>Direkt kaufen</h4>
+                                <p>Weiterleitung zu IKEA.ch</p>
+                            </div>
+                        </div>
+
+                        <!-- Action 2: Preisalarm (vorausgewählt) -->
+                        <div id="action-2" class="action-card selected" onclick="selectAction(2)">
+                            <div class="action-icon" style="color:var(--color-orange)">🔔</div>
+                            <div class="action-text">
+                                <h4>Preisalarm setzen</h4>
+                                <p>E-Mail bei Unterschreitung des Wunschpreises</p>
+                            </div>
+                        </div>
+
+                        <!-- Action 3: Intern melden -->
+                        <div id="action-3" class="action-card" onclick="selectAction(3)">
+                            <div class="action-icon">📋</div>
+                            <div class="action-text">
+                                <h4>Intern melden</h4>
+                                <p>Preisdifferenz ans Team senden</p>
+                            </div>
+                        </div>
+
+                    </div>
+
+                    <!-- DYNAMIC ADAPTIVE FORM depending on chosen action -->
+                    <div id="action-form-section">
+                        <!-- Default Form for Action 2 (PriceAlarm) -->
+                        <div class="interactive-form">
+                            <h4 style="font-size:10px; font-weight:800; text-transform:uppercase; color:#475569; border-bottom:1px solid #f1f5f9; padding-bottom:6px; margin-bottom:4px;">Alarm aktivieren</h4>
+                            
+                            <div class="form-group">
+                                <label>Wunschpreis CHF</label>
+                                <div class="input-wrapper">
+                                    <span style="font-weight:700; color:#94a3b8; font-size:11px;">CHF</span>
+                                    <input type="number" id="form-input-price" value="680">
+                                </div>
+                            </div>
+
+                            <div class="form-group">
+                                <label>E-Mail-Adresse</label>
+                                <div class="input-wrapper">
+                                    <span style="font-weight:700; color:#94a3b8; font-size:11px;">✉</span>
+                                    <input type="email" id="form-input-email" value="lena@mail.ch">
+                                </div>
+                            </div>
+
+                            <button class="btn-primary" style="background-color: var(--color-accent);" onclick="submitForm()">
+                                <span>Alarm aktivieren ➔</span>
+                            </button>
+                        </div>
+                    </div>
+
+                    <!-- Orange Warn-Kasten unten -->
+                    <div class="banner-warning banner-large" style="background-color: #fffaf0; border-color: #ffedd5;">
+                        <span style="font-size: 16px;">⚠️</span>
+                        <div>
+                            <h4>Pfister-Preis ist 20% höher als IKEA – melden lohnt sich!</h4>
+                            <p style="font-size: 8.5px; color:#64748b; margin-top:2px;">
+                                Unser integrierter Benchmark zeigt eine eklatante Preisüberhöhung am Schweizer Markt für diesen 3-Sitzer.
+                            </p>
+                        </div>
+                    </div>
+
+                </div>
+            </div>
+
+            <!-- ======================================================== -->
+            <!-- SCREEN 5: BESTÄTIGUNG                                    -->
+            <!-- ======================================================== -->
+            <div id="screen-5" class="screen-content">
+                <!-- Purple Header -->
+                <div class="phone-header purple-header" style="text-align: center; padding-top:24px;">
+                    <div class="emoji-center">🎉</div>
+                    <h2 style="display:block; text-align:center; margin-top:6px;">Preisalarm gesetzt!</h2>
+                    <p style="text-align:center;">Du wirst benachrichtigt, sobald der Preis fällt</p>
+                </div>
+
+                <div class="container">
+                    
+                    <!-- Deinen Alarm Confirmation box -->
+                    <div class="confirm-card">
+                        <div class="confirm-card-title">
+                            <span>✅</span>
+                            <span>Dein Alarm</span>
+                        </div>
+
+                        <div class="confirm-row">
+                            <label>Produkt</label>
+                            <p>Sofa Lena 3-Sitzer</p>
+                        </div>
+
+                        <div class="confirm-row">
+                            <label>Wunschpreis</label>
+                            <p id="confirm-display-price" class="price">CHF 680.–</p>
+                        </div>
+
+                        <div class="confirm-row">
+                            <label>E-Mail</label>
+                            <p id="confirm-display-email" style="font-family: monospace;">lena@mail.ch</p>
+                        </div>
+
+                        <div class="confirm-row" style="display-direction: row; justify-content: space-between; align-items:center; flex-direction:row;">
+                            <label>Status</label>
+                            <span class="badge-active-green">🟢 Aktiv</span>
+                        </div>
+                    </div>
+
+                    <!-- Yellow tip box -->
+                    <div class="banner-warning" style="background-color: #fef8e6; border-color: #fef08a; border-left: 4px solid #eab308;">
+                        <span style="font-size: 14px;">💡</span>
+                        <div>
+                            <p style="font-size:8.5px; color:#713f12; margin-top:2px;">
+                                IKEA hat den Preis vor 5 Tagen von CHF 769.– auf CHF 749.– gesenkt – eine weitere Senkung ist möglich.
+                            </p>
+                        </div>
+                    </div>
+
+                    <!-- Restart workflow buttons -->
+                    <button class="btn-primary" onclick="goToScreen(1); showToast('Zustand zurückgesetzt')">
+                        <span>← Neue Suche</span>
+                    </button>
+
+                    <button class="btn-primary btn-outline" onclick="showToast('Deine Alarme: 1 aktiv')">
+                        <span>Meine Alarme anzeigen</span>
+                    </button>
+
+                </div>
+            </div>
+
+            <!-- ======================================================== -->
+            <!-- SIMULATOR NAVIGATION TAB BAR (Footer)                     -->
+            <!-- ======================================================== -->
+            <div class="tab-bar">
+                
+                <button id="tab-home" class="tab-item active" onclick="goToScreen(1)">
+                    <span class="tab-icon">🏠</span>
+                    <span>Home</span>
+                </button>
+
+                <button id="tab-search" class="tab-item" onclick="goToScreen(2)">
+                    <span class="tab-icon">🔍</span>
+                    <span>Suche</span>
+                </button>
+
+                <button id="tab-alarms" class="tab-item" onclick="goToScreen(5); showToast('Setze Alarm im Prototyp')">
+                    <span class="tab-icon">🔔</span>
+                    <span>Alarme</span>
+                </button>
+
+                <button id="tab-settings" class="tab-item" onclick="showToast('⚙️ Einstellungen-Menü geladen')">
+                    <span class="tab-icon">⚙️</span>
+                    <span>Einstellungen</span>
+                </button>
+
+            </div>
+
+            <!-- iOS home indicator decorator -->
+            <div class="home-indicator-bar">
+                <div class="home-indicator"></div>
+            </div>
+
+        </div>
+    </div>
+
+    <!-- PROGRESS DOTS (Fortschritts-Punkte showing current page below simulator) -->
+    <div class="progress-dots">
+        <span class="progress-dots-title">Status:</span>
+        <button id="dot-1" class="dot active" onclick="goToScreen(1)">1</button>
+        <button id="dot-2" class="dot" onclick="goToScreen(2)">2</button>
+        <button id="dot-3" class="dot" onclick="goToScreen(3)">3</button>
+        <button id="dot-4" class="dot" onclick="goToScreen(4)">4</button>
+        <button id="dot-5" class="dot" onclick="goToScreen(5)">5</button>
+    </div>
+
+    <!-- SIMPLE JAVASCRIPT FOR SCREEN NAVIGATION AND SIMULATION -->
+    <script>
+        // State variables
+        let currentScreen = 1;
+        let selectedProvider = 'ikea';
+        let selectedAction = 2; // Default is Action 2 (Preisalarm setzen)
+        let activeSort = 'cheap';
+
+        // Mock database for selected Provider Details
+        const PROVIDERS_DATA = {
+            ikea: {
+                shop: "IKEA Schweiz",
+                price: "CHF 749.–",
+                product: "Sofa FRIHETEN, 3-Sitzer, beige",
+                link: "ikea.com/ch/de/friheten-beige-sofa",
+                scan: "Heute 09:01 Uhr",
+                theme: "green-header",
+                stability: "📉 Preis gesunken: CHF 769.– → CHF 749.– (vor 5 Tagen)"
+            },
+            conforma: {
+                shop: "Conforma",
+                price: "CHF 819.–",
+                product: "Sofa LENA 3-Sitzer Kunstleder grau",
+                link: "conforma.ch/de/sofa-lena-comfort",
+                scan: "Vor 3 Tagen",
+                theme: "orange-header",
+                stability: "⚠️ Letzte Preisänderung vor 3 Tagen"
+            },
+            moebelshop: {
+                shop: "Möbel Pfister Online",
+                price: "CHF 869.–",
+                product: "Polstersofa LENA, 3-Plätzer",
+                link: "moebelshop.ch/sofa/lena-3-seaters",
+                scan: "Heute 08:55 Uhr",
+                theme: "purple-header",
+                stability: "📈 Preisanstieg um CHF 20 vor 2 Tagen"
+            },
+            pfister: {
+                shop: "Pfister AG",
+                price: "CHF 899.–",
+                product: "Sofa LENA 3-Sitzer aus Textil",
+                link: "pfister.ch/de/sofa-lena-grau",
+                scan: "Heute 09:01 Uhr",
+                theme: "orange-header",
+                stability: "❌ Bis zu 20% über Bestpreis registriert"
+            }
+        };
+
+        // Go to target screen navigation
+        function goToScreen(screenNumber) {
+            if (screenNumber < 1 || screenNumber > 5) return;
+            currentScreen = screenNumber;
+
+            // Remove active status from all screens
+            for (let i = 1; i <= 5; i++) {
+                document.getElementById(`screen-${i}`).classList.remove('active');
+                document.getElementById(`dot-${i}`).classList.remove('active');
+            }
+
+            // Set current active
+            document.getElementById(`screen-${screenNumber}`).classList.add('active');
+            document.getElementById(`dot-${screenNumber}`).classList.add('active');
+
+            // Set active states on Tab bar items
+            document.getElementById('tab-home').classList.remove('active');
+            document.getElementById('tab-search').classList.remove('active');
+            document.getElementById('tab-alarms').classList.remove('active');
+
+            if (screenNumber === 1) {
+                document.getElementById('tab-home').classList.add('active');
+            } else if (screenNumber === 2) {
+                document.getElementById('tab-search').classList.add('active');
+            } else if (screenNumber === 5) {
+                document.getElementById('tab-alarms').classList.add('active');
+            }
+
+            // Scroll screen viewport to top on screen change
+            document.querySelector('.screen-viewport').scrollTop = 0;
+
+            console.log(`[Simulator] Navigiert zu Screen: ${screenNumber}`);
+        }
+
+        // Handle sorting switch in Screen 2
+        function sortProviders(option) {
+            activeSort = option;
+            document.getElementById('btn-sort-cheap').classList.remove('active');
+            document.getElementById('btn-sort-new').classList.remove('active');
+
+            const listContainer = document.getElementById('providers-list');
+            const cards = Array.from(listContainer.getElementsByClassName('provider-card'));
+
+            if (option === 'cheap') {
+                document.getElementById('btn-sort-cheap').classList.add('active');
+                showToast('Sortiert nach: Günstigster Preis');
+                cards.sort((a,b) => {
+                    const priceA = a.querySelector('.provider-price').innerText.replace(/[^\d]/g, '');
+                    const priceB = b.querySelector('.provider-price').innerText.replace(/[^\d]/g, '');
+                    return Number(priceA) - Number(priceB);
+                });
+            } else {
+                document.getElementById('btn-sort-new').classList.add('active');
+                showToast('Sortiert nach: Aktuellste Scans');
+                cards.sort((a,b) => {
+                    if (a.innerHTML.includes('IKEA')) return -1;
+                    if (b.innerHTML.includes('IKEA')) return 1;
+                    if (a.innerHTML.includes('Conforma')) return 1;
+                    if (b.innerHTML.includes('Conforma')) return -1;
+                    return 0;
+                });
+            }
+
+            // Re-append in correct sorted order
+            cards.forEach(card => listContainer.appendChild(card));
+        }
+
+        // Handle provider click on Screen 2 to update Screen 3 dynamically
+        function selectProvider(key) {
+            selectedProvider = key;
+            const data = PROVIDERS_DATA[key];
+            if (!data) return;
+
+            // Update UI elements in screen 3
+            const header = document.getElementById('detail-header');
+            header.className = `phone-header ${data.theme}`;
+            
+            document.getElementById('detail-shop-sub').innerText = data.shop.toUpperCase();
+            document.getElementById('detail-shop-title').innerText = data.price;
+            document.getElementById('detail-prod-name').innerText = data.product;
+            document.getElementById('detail-link').innerText = data.link;
+            document.getElementById('detail-scan-time').innerText = data.scan;
+            document.getElementById('detail-stability-msg').innerText = data.stability;
+
+            // Go to Screen 3
+            goToScreen(3);
+            showToast(`${data.shop} ausgewählt`);
+        }
+
+        // Select an action on Screen 4 to render correct form or trigger action
+        function selectAction(num) {
+            selectedAction = num;
+            document.getElementById('action-1').classList.remove('selected');
+            document.getElementById('action-2').classList.remove('selected');
+            document.getElementById('action-3').classList.remove('selected');
+
+            document.getElementById(`action-${num}`).classList.add('selected');
+
+            const formArea = document.getElementById('action-form-section');
+
+            if (num === 1) {
+                // Form content 1 (Direkt kaufen)
+                formArea.innerHTML = `
+                    <div class="interactive-form">
+                        <h4 style="font-size:10px; font-weight:800; text-transform:uppercase; color:#475569; border-bottom:1px solid #f1f5f9; padding-bottom:6px; margin-bottom:4px;">Direkt kaufen</h4>
+                        <p style="font-size:11px; color:#475569; line-height:1.4;">
+                            Du wirst umgehend zu unserem Partner <strong>IKEA Schweiz</strong> weitergeleitet, um den Einkauf abzuschliessen.
+                        </p>
+                        <button class="btn-primary btn-green" onclick="submitForm()">
+                            <span>Jetzt direkt weiterleiten ➔</span>
+                        </button>
+                    </div>
+                `;
+                showToast('Aktion: Direkt kaufen gewählt');
+            } else if (num === 2) {
+                // Form content 2 (Preisalarm setzen)
+                formArea.innerHTML = `
+                    <div class="interactive-form">
+                        <h4 style="font-size:10px; font-weight:800; text-transform:uppercase; color:#475569; border-bottom:1px solid #f1f5f9; padding-bottom:6px; margin-bottom:4px;">Alarm aktivieren</h4>
+                        
+                        <div class="form-group">
+                            <label>Wunschpreis CHF</label>
+                            <div class="input-wrapper">
+                                <span style="font-weight:700; color:#94a3b8; font-size:11px;">CHF</span>
+                                <input type="number" id="form-input-price" value="680" oninput="validatePriceAlarmRealtime()">
+                            </div>
+                        </div>
+
+                        <div id="validation-msg" style="font-size: 10px; font-weight: 700; margin-top: 4px; display: none;"></div>
+
+                        <div class="form-group">
+                            <label>E-Mail-Adresse</label>
+                            <div class="input-wrapper">
+                                <span style="font-weight:700; color:#94a3b8; font-size:11px;">✉</span>
+                                <input type="email" id="form-input-email" value="lena@mail.ch">
+                            </div>
+                        </div>
+
+                        <button class="btn-primary" style="background-color: var(--color-accent);" onclick="submitForm()">
+                            <span>Alarm aktivieren ➔</span>
+                        </button>
+                    </div>
+                `;
+                validatePriceAlarmRealtime();
+                showToast('🔔 Preisalarm-Modus aktiv');
+            } else if (num === 3) {
+                // Form content 3 (Intern melden)
+                formArea.innerHTML = `
+                    <div class="interactive-form">
+                        <h4 style="font-size:10px; font-weight:800; text-transform:uppercase; color:#475569; border-bottom:1px solid #f1f5f9; padding-bottom:6px; margin-bottom:4px;">Abweichung melden</h4>
+                        <p style="font-size:11px; color:#475569; line-height:1.4;">
+                            Sende diese Preisüberhöhung an das Pricing-Team. Wir leiten Korrekturen gegenüber Pfister ein.
+                        </p>
+                        <button class="btn-primary" style="background-color: #7c2d12;" onclick="submitForm()">
+                            <span>Intern melden ➔</span>
+                        </button>
+                    </div>
+                `;
+                showToast('Aktion: Abweichung melden gewählt');
+            }
+        }
+
+        // Form submit emulation -> Go to screen 5
+        function submitForm() {
+            if (selectedAction === 2) {
+                // Extract values
+                const priceVal = document.getElementById('form-input-price').value;
+                const emailVal = document.getElementById('form-input-email').value;
+
+                // Sync with screen 5 display
+                document.getElementById('confirm-display-price').innerText = `CHF ${priceVal}.–`;
+                document.getElementById('confirm-display-email').innerText = emailVal;
+                
+                showToast(`🔔 Alarm aktiv! Du wirst bei CHF ${priceVal}.– benachrichtigt.`);
+            } else if (selectedAction === 1) {
+                showToast('🛒 Simuliere Weiterleitung...');
+            } else if (selectedAction === 3) {
+                showToast('Abweichung im System registriert!');
+            }
+
+            // Go to Screen 5
+            goToScreen(5);
+        }
+
+        // Live real-time validation of wunschpreis
+        function validatePriceAlarmRealtime() {
+            const priceInput = document.getElementById('form-input-price');
+            const validationBox = document.getElementById('validation-msg');
+            if (!priceInput || !validationBox) return;
+
+            const val = Number(priceInput.value);
+            if (isNaN(val) || val <= 0) {
+                validationBox.style.display = 'none';
+                return;
+            }
+
+            validationBox.style.display = 'block';
+            if (val >= 749) {
+                validationBox.style.color = 'var(--color-orange)';
+                validationBox.innerText = '⚠️ Wunschpreis liegt über dem Bestpreis';
+            } else {
+                validationBox.style.color = 'var(--color-green)';
+                validationBox.innerText = `✅ Alarm aktiv sobald Preis unter CHF ${val}.– fällt`;
+            }
+        }
+
+        function triggerSearchGlow(element) {
+            element.classList.add('active-glow');
+            showToast('🔍 Sofa Lena 3-Sitzer geladen...');
+            setTimeout(() => {
+                element.classList.remove('active-glow');
+                goToScreen(2);
+            }, 400);
+        }
+
+        // Show cute toast notification inside simulator screen
+        let toastTimeout;
+        function showToast(msg) {
+            const toast = document.getElementById('sim-toast');
+            document.getElementById('sim-toast-msg').innerText = msg;
+            
+            toast.classList.add('show');
+            
+            clearTimeout(toastTimeout);
+            toastTimeout = setTimeout(() => {
+                toast.classList.remove('show');
+            }, 3000);
+        }
+    </script>
+</body>
+</html>
